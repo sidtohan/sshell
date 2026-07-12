@@ -1,10 +1,11 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
+#include <linux/limits.h>
 
-#define NUM_CUSTOM 2
+#define NUM_CUSTOM 3
 #define CUSTOM_FAIL -1
 #define CUSTOM_SUCCESS 0
 #define CUSTOM_NOMATCH 1

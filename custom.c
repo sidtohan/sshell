@@ -1,7 +1,6 @@
 #include "custom.h"
-#include <stdlib.h>
 
-static int cd_custom (int argc, char **argv) {
+static int cd_custom(int argc, char **argv) {
     if (argc != 2) {
         printf("sshell: cd got too many arguments\n");
         return CUSTOM_FAIL;
@@ -13,7 +12,7 @@ static int cd_custom (int argc, char **argv) {
     return CUSTOM_SUCCESS;
 }
 
-static int exit_custom (int argc, char **argv) {
+static int exit_custom(int argc, char **argv) {
     if (argc > 2) {
         printf("sshell: exit got too many arguments\n");
         return CUSTOM_FAIL;
@@ -23,9 +22,20 @@ static int exit_custom (int argc, char **argv) {
     return CUSTOM_SUCCESS;
 }
 
+static int pwd_custom(int argc, char **argv) {
+    char buf[PATH_MAX];
+    if (getcwd(buf, sizeof(buf)) == NULL) {
+        printf("sshell: couldn't list current working directory");
+        return CUSTOM_FAIL;
+    }
+    printf("%s\n", buf);
+    return CUSTOM_SUCCESS;
+}
+
 static custom_command custom[] = {
     {"cd",cd_custom},
-    {"exit", exit_custom}
+    {"exit", exit_custom},
+    {"pwd", pwd_custom}
 };
 
 // Handle custom commands.
