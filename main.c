@@ -1,9 +1,13 @@
+#include <assert.h>
 #include <linux/limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+
+#include "custom.h"
 
 
 // TODOS;
@@ -32,19 +36,22 @@ void executeCommand(char *token) {
         argv[argc++] = token;
         token = strtok(NULL, " \t\r\n\v\f");
     }
-    argv[argc++] = 0;
+    argv[argc] = 0;
+    
 
-    // Need special handling for cd.
-    if (strncmp(command, "cd", 2) == 0) {
-        if (argc != 3) {
-            printf("sshell: cd got too many arguments\n");
-            return;
-        }
-        if(chdir(argv[1]) == -1) {
-            printf("sshell: cd failed to change to directory %s\n", argv[1]);
-        }
+    // Use custom implementation for some commands.
+    switch (handleCustom(argc, argv)){
+    case CUSTOM_FAIL:
+        // Error: need to return something to user..
         return;
-    }
+    case CUSTOM_SUCCESS:
+        return;
+    case CUSTOM_NOMATCH:
+        break;
+    default:
+        // Shouldn't be here. Only Three Codes allowed.
+        assert(0);
+    };
 
     pid = fork();
     if (pid == -1) {
