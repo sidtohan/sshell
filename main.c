@@ -6,10 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <fcntl.h>
 
-#include "custom.h"
-
+#include "tokenizer.h"
 
 // TODOS;
 // 1. Core Shell
@@ -21,93 +19,6 @@
 
 // GLOBALS
 char cwd[PATH_MAX];
-
-void executeCommand(char *token) {
-    // For most commands, will prefer external implementation for now.
-    // For cd, will use chdir.
-    char *argv[64];
-    int argc = 0;
-    int pid = 0;
-    int redirect_trunc = 0;
-    int redirect_app = 0;
-    char *command;
-    
-    if (!token)
-        return;
-    
-    command = token;
-    while (token != NULL) {
-        // Edge case: token is '>'. In this case, we have redirection on our hands.
-        if (strncmp(token, ">", 2) == 0) {
-            redirect_trunc = 1;
-            token = strtok(NULL, " \t\r\n\v\f");
-            break;
-        } else if (strncmp(token, ">>", 2) == 0) {
-            redirect_app = 1;
-            token = strtok(NULL, " \t\r\n\v\f");
-            break;
-        }
-        argv[argc++] = token;
-        token = strtok(NULL, " \t\r\n\v\f");
-    }
-    argv[argc] = 0;
-    
-
-    // Use custom implementation for some commands.
-    switch (handleCustom(argc, argv)){
-    case CUSTOM_FAIL:
-        // Error: need to return something to user..
-        return;
-    case CUSTOM_SUCCESS:
-        return;
-    case CUSTOM_NOMATCH:
-        break;
-    default:
-        // Shouldn't be here. Only Three Codes allowed.
-        assert(0);
-    };
-
-    pid = fork();
-    
-    if (pid == -1) {
-        printf("Fork failed. Exiting");
-        return;
-    }
-
-    if (pid == 0) {
-        // Now need to handle redirect scenario.
-        // TODO: extend for custom commands also.. Might require args change.
-        if (redirect_trunc || redirect_app) {
-            int fd;
-            char *filename = token;
-            // Get file name
-            // Only consider the first param.. Rest can be ignored..
-            while (token != NULL) {
-                token = strtok(NULL, " \t\r\n\v\f");
-            }
-    
-            int o_flags = (redirect_app ? O_APPEND : O_TRUNC);
-            fd = open(filename, O_WRONLY | O_CREAT | o_flags, S_IWUSR | S_IRUSR);
-            if (fd == -1) {
-                printf("sshell: Error opening file for redirect\n");
-                exit(EXIT_FAILURE);
-            }
-    
-            // Overwrite STDOUT_FILENO with opened file..
-            dup2(fd, STDOUT_FILENO);
-            if(close(fd) == -1) {
-                printf("sshell: Error closing file internally for redirect\n");
-                exit(EXIT_FAILURE);
-            }
-        }
-        // Child
-        execvp(command, argv);
-    } else {
-        waitpid(pid, NULL, 0);
-        // Second param is for storing exit status. NULL means don't store.
-        // Last param is options. 0 is default blocking behaviour.
-    } 
-}
 
 void inputLoop() {
     char *buf = NULL;
@@ -123,9 +34,7 @@ void inputLoop() {
             return;
         }
         
-        // Tokenize.
-        token = strtok(buf, " \t\r\n\v\f");
-        executeCommand(token);
+        tokenize(buf);
     }
 
 }

@@ -1,5 +1,13 @@
-main: main.c custom
-	gcc main.c custom.o -o main.out
+main: main.c command tokenizer
+	gcc main.c ./build/command.o ./build/tokenizer.o -o build/main.out
 
-custom: custom.c custom.h
-	gcc -c custom.c 
+command: command.c command.h
+	mkdir -p build # Make if not present
+	gcc -c command.c -o build/command.o
+
+tokenizer: tokenizer.c tokenizer.h
+	mkdir -p build # Make if not present
+	gcc -c tokenizer.c -o build/tokenizer.o
+
+clean:
+	rm -rf build
