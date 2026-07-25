@@ -1,13 +1,16 @@
-main: main.c command tokenizer
-	gcc main.c ./build/command.o ./build/tokenizer.o -o build/main.out
+BUILD_DIR := build
+SRC_DIR := src
+CC := gcc
 
-command: command.c command.h
-	mkdir -p build # Make if not present
-	gcc -c command.c -o build/command.o
+SRCS := command.c tokenizer.c
+OBJS := $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
-tokenizer: tokenizer.c tokenizer.h
-	mkdir -p build # Make if not present
-	gcc -c tokenizer.c -o build/tokenizer.o
+main: $(SRC_DIR)/main.c $(OBJS)
+	$(CC) $^ -o build/main.out
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(SRC_DIR)/%.h
+	mkdir -p $(BUILD_DIR)
+	$(CC) -c $< -o $@
 
 clean:
 	rm -rf build
