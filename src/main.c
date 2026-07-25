@@ -10,9 +10,9 @@
 #include "tokenizer.h"
 
 // TODOS;
-// 1. Core Shell
-// 2. Built Ins like CD etc.
-// 3. File Descriptors (<, >, >>)
+// 1. Core Shell (DONE)
+// 2. Built Ins like CD etc. (DONE)
+// 3. File Descriptors (>, >>) (DONE)
 // 4. IPC (Pipes)
 // 5. Process Management.
 // 6. Extras (Quoted Strings, Environment Variables, History)
