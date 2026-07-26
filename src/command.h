@@ -14,7 +14,7 @@
 #define CUSTOM_NOMATCH 1
 
 extern int8_t handleCustom(int argc, char *argv[]); 
-void executeCommand(char *command, int argc, char *argv[], int8_t redirect, char *redirect_fname); 
+void executeCommand(char *command, int argc, char *argv[], int8_t redirect, char *redirect_fname, int8_t pipe_detected, char *pipe_command); 
 typedef struct {
     char *name;
     int (*func)(int argc, char **argv);

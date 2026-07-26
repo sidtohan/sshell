@@ -1,4 +1,7 @@
 #include "command.h"
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 static int cd_custom(int argc, char **argv) {
     if (argc != 2) {
@@ -52,7 +55,7 @@ int8_t handleCustom(int argc, char *argv[]) {
     return CUSTOM_NOMATCH; // No Match Found.
 }
 
-void executeCommand(char *command, int argc, char *argv[], int8_t redirect, char *redirect_fname) {
+void executeCommand(char *command, int argc, char *argv[], int8_t redirect, char *redirect_fname, int8_t pipe_detected, char *pipe_command) {
     int pid;
     // For most commands, will prefer external implementation for now.
     // For cd, will use chdir.
@@ -72,7 +75,7 @@ void executeCommand(char *command, int argc, char *argv[], int8_t redirect, char
     pid = fork();
     
     if (pid == -1) {
-        printf("Fork failed. Exiting");
+        printf("sshell: Fork failed. Exiting.\n");
         return;
     }
 
@@ -95,9 +98,51 @@ void executeCommand(char *command, int argc, char *argv[], int8_t redirect, char
                 printf("sshell: Error closing file internally for redirect\n");
                 exit(EXIT_FAILURE);
             }
+            execvp(command, argv);
+        } else if (pipe_detected) {
+            // Create pipe fids.
+            int pfids[2] = {-1,-1};
+            if (pipe(pfids) == -1) {
+                printf("sshell: Failed to make pipe. Exiting.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            pid = fork();
+            if (pid == -1) {
+                printf("sshell: Fork failed. Exiting.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            if (pid == 0) {
+                /* Child: will run the first part of the pipe */
+                dup2(pfids[1], STDOUT_FILENO); 
+                if (close(pfids[1]) == -1) {
+                    printf("sshell: Error closing pipe internally.\n");
+                    exit(EXIT_FAILURE);
+                }
+                if (close(pfids[0]) == -1) {
+                    printf("sshell: Error closing pipe internally.\n");
+                    exit(EXIT_FAILURE);
+                }
+                execvp(command, argv);
+            } else {
+                waitpid(pid, NULL, 0);
+                if (close(pfids[1]) == -1) {
+                    printf("sshell: Error closing pipe internally.\n");
+                    exit(EXIT_FAILURE);
+                }
+                /* Now the parent can execute second command by relinking stdin */
+                dup2(pfids[0], STDIN_FILENO);
+                if (close(pfids[0]) == -1) {
+                    printf("sshell: Error closing pipe internally.\n");
+                    exit(EXIT_FAILURE);
+                }
+                execvp(pipe_command, NULL);
+            }
+        } else {
+            // Child
+            execvp(command, argv);
         }
-        // Child
-        execvp(command, argv);
     } else {
         waitpid(pid, NULL, 0);
         // Second param is for storing exit status. NULL means don't store.
